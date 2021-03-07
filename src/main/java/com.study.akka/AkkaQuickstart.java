@@ -35,6 +35,7 @@ public class AkkaQuickstart {
             System.in.read();
 
 
+
         } catch (IOException ioe) {
         } finally {
             system.terminate();
