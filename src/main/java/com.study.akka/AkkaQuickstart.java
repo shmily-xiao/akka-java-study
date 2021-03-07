@@ -33,7 +33,7 @@ public class AkkaQuickstart {
 
             System.out.println(">>> Press ENTER to exit <<<");
             System.in.read();
-
+            // todo
 
 
         } catch (IOException ioe) {
