@@ -23,7 +23,6 @@ public class ActorHierarchyExperiments {
         supervisingActor.tell("failChild", ActorRef.noSender());
 
 
-
         System.out.println(">>> enter to end >>>>");
         try{
             System.in.read();
