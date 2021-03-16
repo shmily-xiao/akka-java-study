@@ -39,6 +39,7 @@ public class Device extends AbstractActor {
         log.info("Device actor {}-{} stopped", groupId, deviceId);
     }
 
+    // 读消息和写消息
     public static final class RecordTemperature {
         final long requestId;
         final double value;
@@ -61,9 +62,32 @@ public class Device extends AbstractActor {
         }
     }
 
+    // 使用设备组
+    public static final class RequestTrackDevice {
+        public final String groupId;
+        public final String deviceId;
+
+        public RequestTrackDevice(String groupId, String deviceId) {
+            this.groupId = groupId;
+            this.deviceId = deviceId;
+        }
+    }
+
+    public static final class DeviceRegistered {
+        public DeviceRegistered(){}
+    }
+
     @Override
     public Receive createReceive() {
         return receiveBuilder()
+                .match(RequestTrackDevice.class, r -> {
+                    if (this.groupId.equals(r.groupId) && this.deviceId.equals(r.deviceId)){
+                        super.getSender().tell(new DeviceRegistered(), super.getSelf());
+                    } else {
+                        log.warning("Ignoring TrackDevice request for {}-{}. This actor is responsible for {}-{}.",
+                                r.groupId, r.deviceId, this.groupId, this.deviceId);
+                    }
+                })
                 .match(RecordTemperature.class, r -> {
                     log.info("Recorded temperature reading {} with {}", r.value, r.requestId);
                     lastTemperatureReading = Optional.of(r.value);

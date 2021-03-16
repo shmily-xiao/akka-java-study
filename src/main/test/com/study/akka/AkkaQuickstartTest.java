@@ -80,6 +80,56 @@ public class AkkaQuickstartTest {
         Assert.assertEquals(Optional.of(55.0), response2.getValue());
     }
 
+    //@Test
+    //public void testReplyToRegistrationRequests() {
+    //  TestKit probe = new TestKit(system);
+    //  ActorRef deviceActor = system.actorOf(Device.props("group", "device"));
+    //
+    //  deviceActor.tell(new DeviceManager.RequestTrackDevice("group", "device"), probe.getRef());
+    //  probe.expectMsgClass(DeviceManager.DeviceRegistered.class);
+    //  assertEquals(deviceActor, probe.getLastSender());
+    //}
+    //
+    //@Test
+    //public void testIgnoreWrongRegistrationRequests() {
+    //  TestKit probe = new TestKit(system);
+    //  ActorRef deviceActor = system.actorOf(Device.props("group", "device"));
+    //
+    //  deviceActor.tell(new DeviceManager.RequestTrackDevice("wrongGroup", "device"), probe.getRef());
+    //  probe.expectNoMessage();
+    //
+    //  deviceActor.tell(new DeviceManager.RequestTrackDevice("group", "wrongDevice"), probe.getRef());
+    //  probe.expectNoMessage();
+    //}
+
+    /**
+     * 一个成功注册
+     */
+    @Test
+    public void testReplayToRegistrationRequests(){
+        TestKit testKit = new TestKit(system);
+        ActorRef deviceActor = system.actorOf(Device.props("group", "deviceId"));
+
+        deviceActor.tell(new Device.RequestTrackDevice("group", "deviceId"), testKit.getRef());
+        testKit.expectMsgClass(Device.DeviceRegistered.class);
+        Assert.assertEquals(deviceActor, testKit.getLastSender());
+
+    }
+
+    /**
+     * group 和 device 不匹配，注册不成功 。因为在device 的createReceive()里面else 分支没有 tell 返回值
+     */
+    @Test
+    public void testIgnoreWrongRegistrationRequests(){
+        TestKit testKit = new TestKit(system);
+        ActorRef actorRef = system.actorOf(Device.props("group", "device"));
+
+        actorRef.tell(new Device.RequestTrackDevice("wringGroup", "device"), testKit.getRef());
+        testKit.expectNoMessage();
+
+        actorRef.tell(new Device.RequestTrackDevice("group", "wrongDevice"), testKit.getRef());
+        testKit.expectNoMessage();
+    }
 
 
 }
