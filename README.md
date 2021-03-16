@@ -16,4 +16,5 @@ https://cloud.tencent.com/developer/article/1438044
  
  
 
-# nothing
+# 第4章节
+- 向设备 Actor 添加注册支持
