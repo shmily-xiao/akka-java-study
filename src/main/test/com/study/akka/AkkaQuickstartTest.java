@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.study.akka.iot.Device;
+import com.study.akka.iot.DeviceGroup;
 import com.study.akka.iot.ReadTemperature;
 import com.study.akka.iot.ResponseTemperature;
 import org.junit.AfterClass;
@@ -80,28 +81,6 @@ public class AkkaQuickstartTest {
         Assert.assertEquals(Optional.of(55.0), response2.getValue());
     }
 
-    //@Test
-    //public void testReplyToRegistrationRequests() {
-    //  TestKit probe = new TestKit(system);
-    //  ActorRef deviceActor = system.actorOf(Device.props("group", "device"));
-    //
-    //  deviceActor.tell(new DeviceManager.RequestTrackDevice("group", "device"), probe.getRef());
-    //  probe.expectMsgClass(DeviceManager.DeviceRegistered.class);
-    //  assertEquals(deviceActor, probe.getLastSender());
-    //}
-    //
-    //@Test
-    //public void testIgnoreWrongRegistrationRequests() {
-    //  TestKit probe = new TestKit(system);
-    //  ActorRef deviceActor = system.actorOf(Device.props("group", "device"));
-    //
-    //  deviceActor.tell(new DeviceManager.RequestTrackDevice("wrongGroup", "device"), probe.getRef());
-    //  probe.expectNoMessage();
-    //
-    //  deviceActor.tell(new DeviceManager.RequestTrackDevice("group", "wrongDevice"), probe.getRef());
-    //  probe.expectNoMessage();
-    //}
-
     /**
      * 一个成功注册
      */
@@ -130,6 +109,37 @@ public class AkkaQuickstartTest {
         actorRef.tell(new Device.RequestTrackDevice("group", "wrongDevice"), testKit.getRef());
         testKit.expectNoMessage();
     }
+
+    @Test
+    public void testRegisterDeviceActor(){
+        TestKit testKit = new TestKit(system);
+        ActorRef actorRef = system.actorOf(DeviceGroup.props("group"));
+
+        actorRef.tell(new Device.RequestTrackDevice("group", "device1"), testKit.getRef());
+        testKit.expectMsgClass(Device.DeviceRegistered.class);
+        ActorRef deviceActor1 = testKit.getLastSender();
+
+        actorRef.tell(new Device.RequestTrackDevice("group", "device2"), testKit.getRef());
+        testKit.expectMsgClass(Device.DeviceRegistered.class);
+        ActorRef deviceActor2 = testKit.getLastSender();
+        Assert.assertNotEquals(deviceActor1, deviceActor2);
+
+        deviceActor1.tell(new Device.RecordTemperature(0L, 1.0), testKit.getRef());
+        Assert.assertEquals(0L, testKit.expectMsgClass(Device.TemperatureRecorded.class).getRequestId());
+        deviceActor2.tell(new Device.RecordTemperature(1L, 2.0), testKit.getRef());
+        Assert.assertEquals(1L, testKit.expectMsgClass(Device.TemperatureRecorded.class).getRequestId());
+    }
+
+    @Test
+    public void testIgnoreRequestsWrongGroupId(){
+        TestKit testKit = new TestKit(system);
+        ActorRef actorRef = system.actorOf(DeviceGroup.props("group"));
+
+        actorRef.tell(new Device.RequestTrackDevice("wrongGroup", "device1"), testKit.getRef());
+//        actorRef.tell(new Device.RequestTrackDevice("group", "device1"), testKit.getRef());
+        testKit.expectNoMessage();
+    }
+
 
 
 }
