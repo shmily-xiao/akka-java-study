@@ -3,11 +3,13 @@ package com.study.akka.iot;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Terminated;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author wzj
@@ -25,8 +27,40 @@ import java.util.Map;
     public static Props props(String groupId){
         return Props.create(DeviceGroup.class, () -> new DeviceGroup(groupId));
     }
-    // 记录注册信息
+
+    /**
+     * 新的查询功能
+     */
+    public static final class RequestDeviceList{
+        final long requestId;
+
+        public RequestDeviceList(long requestId) {
+            this.requestId = requestId;
+        }
+    }
+
+    /**
+     * 回复信息
+     */
+    public static final class ReplyDeviceList{
+        public final long requestId;
+        public final Set<String > ids;
+
+        public ReplyDeviceList(long requestId, Set<String> ids) {
+            this.requestId = requestId;
+            this.ids = ids;
+        }
+    }
+
+
+    /**
+     *  记录注册信息
+     */
     final Map<String, ActorRef> deviceIdToActor = new HashMap<>();
+    /**
+     * 反向记录信息
+     */
+    final Map<ActorRef, String> actorToDeviceId = new HashMap<>();
 
     @Override
     public void preStart() throws Exception, Exception {
@@ -50,18 +84,43 @@ import java.util.Map;
                 log.info("Creating device actor for {}", trackMsg.deviceId);
                 // 创建 actor
                 deviceActor = super.getContext().actorOf(Device.props(groupId, trackMsg.deviceId), "device-"+trackMsg.deviceId);
+
+                // watch
+                // 当新设备 Actor 被创建时开始观察（watching）。
+                getContext().watch(deviceActor);
+
                 // 存在自己的map中
                 deviceIdToActor.put(trackMsg.deviceId, deviceActor);
+                actorToDeviceId.put(deviceActor, trackMsg.deviceId);
                 // 将消息发出去，保留原始的发送者
                 deviceActor.forward(trackMsg, getContext());
                 // forward 等同于 下面的这句话
 //                 deviceActor.tell(trackMsg, getContext().getSender());
-
-//                 deviceActor.tell(trackMsg, getSelf());
             }
         }else {
             log.warning("Ignoring TrackDevice request for {}. This actor is responsible for {}.", trackMsg.groupId, this.groupId);
         }
+    }
+
+    /**
+     * 查询有哪些deviceid
+     * @param r
+     */
+    private void onDeviceList(RequestDeviceList r){
+        log.info("onDeviceList {} ", r.requestId);
+        log.info("deviceIdToActor.keySet() {} ", deviceIdToActor.keySet());
+        super.getSender().tell(new ReplyDeviceList(r.requestId, deviceIdToActor.keySet()), getSelf());
+    }
+
+    /**
+     * 如果出现问题就删除注册表
+     */
+    private void onTerminated(Terminated t){
+        ActorRef deviceActor = t.getActor();
+        String deviceId = actorToDeviceId.get(deviceActor);
+        log.info("Device actor for {} has been terminated", deviceId);
+        actorToDeviceId.remove(deviceActor);
+        deviceIdToActor.remove(deviceId);
     }
 
 
@@ -69,6 +128,8 @@ import java.util.Map;
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Device.RequestTrackDevice.class, this::onTrackDevice)
+                .match(RequestDeviceList.class, this::onDeviceList)
+                .match(Terminated.class, this::onTerminated)
                 .build();
     }
 }

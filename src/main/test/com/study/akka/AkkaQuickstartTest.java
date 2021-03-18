@@ -3,11 +3,9 @@ package com.study.akka;
 import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.PoisonPill;
 import akka.testkit.javadsl.TestKit;
-import com.study.akka.iot.Device;
-import com.study.akka.iot.DeviceGroup;
-import com.study.akka.iot.ReadTemperature;
-import com.study.akka.iot.ResponseTemperature;
+import com.study.akka.iot.*;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -15,6 +13,8 @@ import org.junit.Test;
 import scala.concurrent.duration.Duration;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AkkaQuickstartTest {
     static ActorSystem system;
@@ -140,6 +140,79 @@ public class AkkaQuickstartTest {
         testKit.expectNoMessage();
     }
 
+    /**
+     * 我们测试在添加了一些设备之后，是否能返回正确的 ID 列表
+     */
+    @Test
+    public void testListActiveDevices(){
+        TestKit probe = new TestKit(system);
+
+        ActorRef groupActor = system.actorOf(DeviceGroup.props("group"));
+        // 消息的作用域是什么？
+        groupActor.tell(new Device.RequestTrackDevice("group", "device1"),probe.getRef());
+        probe.expectMsgClass(Device.DeviceRegistered.class);
+
+        groupActor.tell(new Device.RequestTrackDevice("group", "device2"),probe.getRef());
+        probe.expectMsgClass(Device.DeviceRegistered.class);
+
+        groupActor.tell(new DeviceGroup.RequestDeviceList(0L), probe.getRef());
+        DeviceGroup.ReplyDeviceList reply = probe.expectMsgClass(DeviceGroup.ReplyDeviceList.class);
+        Assert.assertEquals(0L, reply.requestId);
+        Assert.assertEquals(Stream.of("device1","device2").collect(Collectors.toSet()),reply.ids);
+    }
+
+    /**
+     * 测试用例确保在设备 Actor 停止后正确删除设备 ID
+     */
+    @Test
+    public void testListActiveDevicesAfterOneShutdown(){
+        TestKit probe = new TestKit(system);
+        ActorRef groupActor = system.actorOf(DeviceGroup.props("group"));
+
+        groupActor.tell(new Device.RequestTrackDevice("group", "device1"), probe.getRef());
+        probe.expectMsgClass(Device.DeviceRegistered.class);
+        ActorRef toShutdown = probe.getLastSender();
+
+        groupActor.tell(new Device.RequestTrackDevice("group", "device2"), probe.getRef());
+        probe.expectMsgClass(Device.DeviceRegistered.class);
+
+        groupActor.tell(new DeviceGroup.RequestDeviceList(0L), probe.getRef());
+        DeviceGroup.ReplyDeviceList reply = probe.expectMsgClass(DeviceGroup.ReplyDeviceList.class);
+        Assert.assertEquals(0L, reply.requestId);
+        Assert.assertEquals(Stream.of("device1","device2").collect(Collectors.toSet()), reply.ids);
+
+        System.out.println("------------------///-----------------" + reply.requestId);
+
+        // 观察 device1 的actor
+        probe.watch(toShutdown);
+        toShutdown.tell(PoisonPill.getInstance(), ActorRef.noSender());
+        probe.expectTerminated(java.time.Duration.ofSeconds(1),toShutdown);
+
+        probe.awaitAssert(java.time.Duration.ofSeconds(3),() -> {
+            groupActor.tell(new DeviceGroup.RequestDeviceList(1L), probe.getRef());
+            DeviceGroup.ReplyDeviceList r = probe.expectMsgClass(DeviceGroup.ReplyDeviceList.class);
+            System.out.println("-----------------++----------------- " + r.requestId);
+            Assert.assertEquals(1L, r.requestId);
+            Assert.assertEquals(Stream.of("device2").collect(Collectors.toSet()), r.ids);
+            return null;
+        });
+    }
+
+
+    /**
+     *  未测试通过
+     */
+    @Test
+    public void testDeviceManager(){
+        TestKit probe = new TestKit(system);
+        ActorRef groupActor = system.actorOf(DeviceManager.props());
+
+        groupActor.tell(new DeviceManager.RequestTrackDevice("group", "device1"), probe.getRef());
+        probe.expectMsgClass(Device.DeviceRegistered.class);
+
+        groupActor.tell(new DeviceManager.RequestTrackDevice("group", "device2"), groupActor);
+        probe.expectMsgClass(DeviceManager.DeviceRegisted.class);
+    }
 
 
 }
