@@ -19,3 +19,4 @@ https://cloud.tencent.com/developer/article/1438044
 # 第4章节
 - 向设备 Actor 添加注册支持
 - 跟踪组内的设备 Actor
+- 管理设备actor
