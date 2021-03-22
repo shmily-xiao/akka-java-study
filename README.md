@@ -23,3 +23,5 @@ https://cloud.tencent.com/developer/article/1438044
 - 跟踪组内的设备 Actor
 - 管理设备actor
 
+# 第 5 部分: 查询设备组
+- 实现查询功能
