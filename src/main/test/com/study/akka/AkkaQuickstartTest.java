@@ -11,8 +11,13 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
 
+import javax.management.Query;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -214,5 +219,212 @@ public class AkkaQuickstartTest {
         probe.expectMsgClass(DeviceManager.DeviceRegisted.class);
     }
 
+    /**
+     *  我们在有两个设备的情况下进行测试，两个设备都报告了温度
+     */
+    @Test
+    public void testReturnTemperatureValueForWorkingDevices(){
+        TestKit requester = new TestKit(system);
 
+        TestKit device1 = new TestKit(system);
+        TestKit device2 = new TestKit(system);
+
+        Map<ActorRef, String> actorToDeviceId = new HashMap<>();
+        actorToDeviceId.put(device1.getRef(), "device1");
+        actorToDeviceId.put(device2.getRef(), "device2");
+
+        ActorRef queryActor = system.actorOf(DeviceGroupQuery.props(actorToDeviceId, 1L, requester.getRef(), new FiniteDuration(3, TimeUnit.SECONDS)));
+
+        Assert.assertEquals(0L, device1.expectMsgClass(ReadTemperature.class).getRequestId());
+        Assert.assertEquals(0L, device2.expectMsgClass(ReadTemperature.class).getRequestId());
+
+        // 报告了温度
+        queryActor.tell(new ResponseTemperature(0L, Optional.of(1.0)), device1.getRef());
+        queryActor.tell(new ResponseTemperature(0L, Optional.of(2.0)), device2.getRef());
+
+        DeviceGroup.RespondAllTemperatures response = requester.expectMsgClass(DeviceGroup.RespondAllTemperatures.class);
+        Assert.assertEquals(1L, response.getRequestId());
+
+        Map<String, DeviceGroup.TemperatureReading> expectedTemperatures = new HashMap<>();
+        expectedTemperatures.put("device1", new DeviceGroup.Temperature(1.0));
+        expectedTemperatures.put("device2", new DeviceGroup.Temperature(2.0));
+
+        Assert.assertEquals(expectedTemperatures, response.getTemperatures());
+    }
+
+
+    /**
+     * 这是一个很好的例子，但我们知道有时设备不能提供温度测量。
+     * 有一个使用设备没有发送温度
+     */
+    @Test
+    public void testReturnTemperatureNoteAvailableForDeviceWithNoReadings(){
+        TestKit requester = new TestKit(system);
+
+        TestKit device1 = new TestKit(system);
+        TestKit device2 = new TestKit(system);
+
+        Map<ActorRef, String> actorToDeviceId = new HashMap<>();
+        actorToDeviceId.put(device1.getRef(), "device1");
+        actorToDeviceId.put(device2.getRef(), "device2");
+
+        ActorRef queryActor = system.actorOf(DeviceGroupQuery.props(actorToDeviceId, 1L, requester.getRef(), new FiniteDuration(3, TimeUnit.SECONDS)));
+
+        Assert.assertEquals(0L, device1.expectMsgClass(ReadTemperature.class).getRequestId());
+        Assert.assertEquals(0L, device2.expectMsgClass(ReadTemperature.class).getRequestId());
+
+        queryActor.tell(new ResponseTemperature(0L, Optional.empty()), device1.getRef());
+        queryActor.tell(new ResponseTemperature(0L, Optional.of(2.0)), device2.getRef());
+
+        DeviceGroup.RespondAllTemperatures response = requester.expectMsgClass(DeviceGroup.RespondAllTemperatures.class);
+        Assert.assertEquals(1L, response.getRequestId());
+
+        Map<String, DeviceGroup.TemperatureReading> expectedTemperatures = new HashMap<>();
+        expectedTemperatures.put("device1", DeviceGroup.TemperatureNotAvailable.INSTANCE);
+        expectedTemperatures.put("device2", new DeviceGroup.Temperature(2.0));
+
+        Assert.assertEquals(expectedTemperatures, response.getTemperatures());
+    }
+
+
+    /**
+     * 设备2 在响应之前中毒了，关闭了
+     */
+    @Test
+    public void testReturnDeviceNotAvailableIfDeviceStopsBeforeAnswering(){
+        TestKit requester = new TestKit(system);
+
+        TestKit device1 = new TestKit(system);
+        TestKit device2 = new TestKit(system);
+
+        Map<ActorRef, String> actorToDeviceId = new HashMap<>();
+        actorToDeviceId.put(device1.getRef(), "device1");
+        actorToDeviceId.put(device2.getRef(), "device2");
+
+        ActorRef queryActor = system.actorOf(DeviceGroupQuery.props(actorToDeviceId, 1L, requester.getRef(), new FiniteDuration(3, TimeUnit.SECONDS)));
+
+        Assert.assertEquals(0L, device1.expectMsgClass(ReadTemperature.class).getRequestId());
+        Assert.assertEquals(0L, device2.expectMsgClass(ReadTemperature.class).getRequestId());
+
+        queryActor.tell(new ResponseTemperature(0L, Optional.of(1.0)), device1.getRef());
+        device2.getRef().tell(PoisonPill.getInstance(), ActorRef.noSender());
+
+        DeviceGroup.RespondAllTemperatures  response = requester.expectMsgClass(DeviceGroup.RespondAllTemperatures.class);
+        Assert.assertEquals(1L, response.getRequestId());
+
+        Map<String, DeviceGroup.TemperatureReading> expectedTemperatures = new HashMap<>();
+        expectedTemperatures.put("device1", new DeviceGroup.Temperature(1.0));
+        expectedTemperatures.put("device2", DeviceGroup.DeviceNotAvailable.INSTANCE);
+
+        Assert.assertEquals(expectedTemperatures, response.getTemperatures());
+
+    }
+
+    /**
+     * 如果你还记得，还有一个用例与设备 Actor 停止相关。
+     * 我们可以从一个设备 Actor 得到一个正常的回复，
+     * 但是随后接收到同一个 Actor 的一个Terminated消息。
+     * 在这种情况下，我们希望保持第一次回复，而不是将设备标记为DeviceNotAvailable
+     */
+    @Test
+    public void testReturnTemperatureReadingEventIfDeviceStopsAfterAnswering(){
+        TestKit requester = new TestKit(system);
+
+        TestKit device1 = new TestKit(system);
+        TestKit device2 = new TestKit(system);
+
+        Map<ActorRef, String> actorToDeviceId = new HashMap<>();
+        actorToDeviceId.put(device1.getRef(), "device1");
+        actorToDeviceId.put(device2.getRef(), "device2");
+
+        ActorRef queryActor = system.actorOf(DeviceGroupQuery.props(actorToDeviceId, 1L, requester.getRef(), new FiniteDuration(3, TimeUnit.SECONDS)));
+
+        Assert.assertEquals(0L, device1.expectMsgClass(ReadTemperature.class).getRequestId());
+        Assert.assertEquals(0L, device2.expectMsgClass(ReadTemperature.class).getRequestId());
+
+        queryActor.tell(new ResponseTemperature(0L, Optional.of(1.0)), device1.getRef());
+        queryActor.tell(new ResponseTemperature(0L, Optional.of(2.0)), device2.getRef());
+        // 报告完了数据之后立马失效
+        device2.getRef().tell(PoisonPill.getInstance(), ActorRef.noSender());
+
+        DeviceGroup.RespondAllTemperatures response = requester.expectMsgClass(DeviceGroup.RespondAllTemperatures.class);
+        Assert.assertEquals(1L, response.getRequestId());
+
+        Map<String, DeviceGroup.TemperatureReading> expectedTemperatures = new HashMap<>();
+        expectedTemperatures.put("device1", new DeviceGroup.Temperature(1.0));
+        expectedTemperatures.put("device2", new DeviceGroup.Temperature(2.0));
+
+        Assert.assertEquals(expectedTemperatures, response.getTemperatures());
+
+    }
+
+    /**
+     * 最后一种情况是，并非所有设备都能及时响应。
+     */
+    @Test
+    public void testReturnDeviceTimedOutIfDoesNotAnswerInTime(){
+        TestKit requester = new TestKit(system);
+
+        TestKit device1 = new TestKit(system);
+        TestKit device2 = new TestKit(system);
+
+        Map<ActorRef, String> actorToDeviceId =  new HashMap<>();
+        actorToDeviceId.put(device1.getRef(), "device1");
+        actorToDeviceId.put(device2.getRef(), "device2");
+
+        ActorRef queryActor = system.actorOf(DeviceGroupQuery.props(actorToDeviceId, 1L, requester.getRef(), new FiniteDuration(1, TimeUnit.SECONDS)));
+
+        Assert.assertEquals(0L, device1.expectMsgClass(ReadTemperature.class).getRequestId());
+        Assert.assertEquals(0L, device2.expectMsgClass(ReadTemperature.class).getRequestId());
+
+        queryActor.tell(new ResponseTemperature(0L, Optional.of(1.0)), device1.getRef());
+
+        DeviceGroup.RespondAllTemperatures response = requester.expectMsgClass(java.time.Duration.ofSeconds(5), DeviceGroup.RespondAllTemperatures.class);
+        Assert.assertEquals(1L, response.getRequestId());
+
+        Map<String, DeviceGroup.TemperatureReading> expectedTemperatures = new HashMap<>();
+        expectedTemperatures.put("device1", new DeviceGroup.Temperature(1.0));
+        expectedTemperatures.put("device2", DeviceGroup.DeviceTimeOut.INSTANCE);
+
+        Assert.assertEquals(expectedTemperatures, response.getTemperatures());
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void testCollectTemperaturesFromAllActiveDevices(){
+        TestKit probe = new TestKit(system);
+        ActorRef groupActor = system.actorOf(DeviceGroup.props("group"));
+
+        groupActor.tell(new DeviceManager.RequestTrackDevice("group", "device1"), probe.getRef());
+        probe.expectMsgClass(DeviceManager.DeviceRegisted.class);
+        ActorRef deviceActor1 = probe.getLastSender();
+
+        groupActor.tell(new DeviceManager.RequestTrackDevice("group","device2"), probe.getRef());
+        probe.expectMsgClass(DeviceManager.DeviceRegisted.class);
+        ActorRef deviceActor2 = probe.getLastSender();
+
+        groupActor.tell(new DeviceManager.RequestTrackDevice("group", "device3"), probe.getRef());
+        probe.expectMsgClass(DeviceManager.DeviceRegisted.class);
+        ActorRef deviceActor3 = probe.getLastSender();
+
+        // deviceActor1、deviceActor2、 deviceActor3 都是子actor
+        deviceActor1.tell(new Device.RecordTemperature(0L, 1.0), probe.getRef());
+        Assert.assertEquals(0L, probe.expectMsgClass(Device.TemperatureRecorded.class).getRequestId());
+        deviceActor2.tell(new Device.RecordTemperature(1L, 2.0), probe.getRef());
+        Assert.assertEquals(1L, probe.expectMsgClass(Device.TemperatureRecorded.class).getRequestId());
+
+        groupActor.tell(new DeviceGroup.RequestAllTemperatures(0L), probe.getRef());
+        DeviceGroup.RespondAllTemperatures response = probe.expectMsgClass(DeviceGroup.RespondAllTemperatures.class);
+        Assert.assertEquals(0L, response.getRequestId());
+
+        Map<String, DeviceGroup.TemperatureReading> expectedTemperature = new HashMap<>();
+        expectedTemperature.put("device1", new DeviceGroup.Temperature(1.0));
+        expectedTemperature.put("device2", new DeviceGroup.Temperature(2.0));
+        expectedTemperature.put("device3", DeviceGroup.TemperatureNotAvailable.INSTANCE);
+
+        Assert.assertEquals(expectedTemperature, response.getTemperatures());
+
+    }
 }

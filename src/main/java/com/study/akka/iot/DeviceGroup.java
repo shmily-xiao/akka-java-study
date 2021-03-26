@@ -6,10 +6,12 @@ import akka.actor.Props;
 import akka.actor.Terminated;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import scala.concurrent.duration.FiniteDuration;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author wzj
@@ -102,6 +104,35 @@ import java.util.Set;
         }
     }
 
+    private void onTrackDevice(DeviceManager.RequestTrackDevice trackMsg){
+        if (this.groupId.equals(trackMsg.groupId)){
+            ActorRef deviceActor = deviceIdToActor.get(trackMsg.deviceId);
+            if(deviceActor != null){
+                // 两者之间的唯一区别是，forward保留原始发送者，而tell将发送者设置为当前 Actor。
+                // 就像我们的设备 Actor 一样，我们确保不响应错误的组 ID
+                deviceActor.forward(trackMsg, getContext());
+            } else {
+                log.info("DeviceManager Creating device actor for {}", trackMsg.deviceId);
+                // 创建 actor
+                deviceActor = super.getContext().actorOf(Device.props(groupId, trackMsg.deviceId), "device-"+trackMsg.deviceId);
+
+                // watch
+                // 当新设备 Actor 被创建时开始观察（watching）。
+                getContext().watch(deviceActor);
+
+                // 存在自己的map中
+                deviceIdToActor.put(trackMsg.deviceId, deviceActor);
+                actorToDeviceId.put(deviceActor, trackMsg.deviceId);
+                // 将消息发出去，保留原始的发送者
+                deviceActor.forward(trackMsg, getContext());
+                // forward 等同于 下面的这句话
+//                 deviceActor.tell(trackMsg, getContext().getSender());
+            }
+        }else {
+            log.warning("Ignoring TrackDevice request for {}. This actor is responsible for {}.", trackMsg.groupId, this.groupId);
+        }
+    }
+
     /**
      * 查询有哪些deviceid
      * @param r
@@ -139,11 +170,22 @@ import java.util.Set;
             this.requestId = requestId;
             this.temperatures = temperatures;
         }
+
+        public long getRequestId() {
+            return requestId;
+        }
+
+        public Map<String, TemperatureReading> getTemperatures() {
+            return temperatures;
+        }
     }
 
     public static interface TemperatureReading{
     }
 
+    /**
+     * 温度
+     */
     public static final class Temperature implements TemperatureReading{
         public final double value;
 
@@ -186,12 +228,24 @@ import java.util.Set;
     }
 
 
+    private void onAllTemperatures(RequestAllTemperatures r){
+        // since Java collections are mutable, we want to avoid sharing them between actors (since multiple Actors (threads)
+        // modifying the same mutable data-structure is not safe), and perform a defensive copy of the mutable map:
+        //
+        // Feel free to use your favourite immutable data-structures library with Akka in Java applications!
+        Map<ActorRef, String> actorToDeviceIdCopy = new HashMap<>(this.actorToDeviceId);
+
+        getContext().actorOf(DeviceGroupQuery.props(actorToDeviceIdCopy, r.requestId, getSender(), new FiniteDuration(3, TimeUnit.SECONDS)));
+    }
+
     @Override
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Device.RequestTrackDevice.class, this::onTrackDevice)
                 .match(RequestDeviceList.class, this::onDeviceList)
                 .match(Terminated.class, this::onTerminated)
+                .match(RequestAllTemperatures.class, this::onAllTemperatures)
+                .match(DeviceManager.RequestTrackDevice.class, this::onTrackDevice)
                 .build();
     }
 }

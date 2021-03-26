@@ -6,4 +6,8 @@ public final class ReadTemperature {
     public ReadTemperature(long requestId){
         this.requestId = requestId;
     }
+
+    public long getRequestId() {
+        return requestId;
+    }
 }
