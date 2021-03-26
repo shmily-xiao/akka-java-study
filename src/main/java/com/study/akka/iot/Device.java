@@ -88,6 +88,14 @@ public class Device extends AbstractActor {
                                 r.groupId, r.deviceId, this.groupId, this.deviceId);
                     }
                 })
+                .match(DeviceManager.RequestTrackDevice.class, r->{
+                    if (this.groupId.equals(r.groupId) && this.deviceId.equals(r.deviceId)){
+                        super.getSender().tell(new DeviceManager.DeviceRegisted(), getSelf());
+                    } else {
+                        log.warning("Ignoring DeviceManager.TrackDevice request for {}-{}. This actor is responsible for {}-{}.",
+                                r.groupId, r.deviceId, this.groupId, this.deviceId);
+                    }
+                })
                 .match(RecordTemperature.class, r -> {
                     log.info("Recorded temperature reading {} with {}", r.value, r.requestId);
                     lastTemperatureReading = Optional.of(r.value);
