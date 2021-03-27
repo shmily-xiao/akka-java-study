@@ -26,3 +26,5 @@ https://cloud.tencent.com/developer/article/1438044
 # 第 5 部分: 查询设备组
 - 实现查询功能
 - done
+
+#
