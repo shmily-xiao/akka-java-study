@@ -29,4 +29,6 @@ https://cloud.tencent.com/developer/article/1438044
 
 #
 # 什么是actor done
-# 
+
+# 监督和监控 done
+- 有一些没有十分理解
