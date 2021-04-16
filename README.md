@@ -36,3 +36,5 @@ https://cloud.tencent.com/developer/article/1438044
 # Actor 引用、路径和地址 done
 
 # Actors begin
+## 依赖注入
+## [akka java in spring](https://github.com/typesafehub/activator-akka-java-spring)
