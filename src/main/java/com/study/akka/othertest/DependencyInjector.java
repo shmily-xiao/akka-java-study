@@ -23,16 +23,25 @@ public class DependencyInjector implements IndirectActorProducer {
 
     @Override
     public Actor produce() {
-        TheActor result;
-        result = new TheActor( (String) applicationContext);
-        return result;
+        return null;
     }
 
     @Override
     public Class<? extends Actor> actorClass() {
-        return TheActor.class;
+        return null;
     }
-
-    final ActorRef myActor = getContext().actorOf(Props.create(DependencyInjector.class, applicationContext, "TheActor"), "TheActor");
+//    @Override
+//    public Actor produce() {
+//        TheActor result;
+//        result = new TheActor( (String) applicationContext);
+//        return result;
+//    }
+//
+//    @Override
+//    public Class<? extends Actor> actorClass() {
+//        return TheActor.class;
+//    }
+//
+//    final ActorRef myActor = getContext().actorOf(Props.create(DependencyInjector.class, applicationContext, "TheActor"), "TheActor");
 }
 
