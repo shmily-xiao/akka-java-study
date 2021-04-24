@@ -42,4 +42,3 @@ https://cloud.tencent.com/developer/article/1438044
 
 ## Actor 的生命周期
 - 生命周期监控，或称为 DeathWatch 
--
