@@ -41,4 +41,7 @@ https://cloud.tencent.com/developer/article/1438044
 - actor 依赖注入 完结，但是这个章节的代码没有办法跑
 
 ## Actor 的生命周期
-- 生命周期监控，或称为 DeathWatch 
+- 生命周期监控，或称为 DeathWatch
+
+## 发送消息
+
