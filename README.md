@@ -46,4 +46,4 @@ https://cloud.tencent.com/developer/article/1438044
 ## 发送消息
 
 ## 接收消息
-
+- 如果对某些 Actor 来说，验证ReceiveBuilder匹配逻辑是一个瓶颈，那么你可以考虑通过扩展UntypedAbstractActor而不是AbstractActor来在较低的级别实现它。ReceiveBuilder创建的分部函数由每个match语句的多个lambda表达式组成，其中每个lambda都引用要运行的代码。这是 JVM 在优化时可能会遇到的问题，并且产生的代码的性能可能不如非类型化版本。当扩展UntypedAbstractActor时，每个消息都作为非类型化Object接收，你必须以其他方式检查并转换为实际的消息类型
