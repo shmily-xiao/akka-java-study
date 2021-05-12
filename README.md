@@ -50,6 +50,6 @@ https://cloud.tencent.com/developer/article/1438044
 ## 停止 Actor
 
 ## 协调关闭
-~
-~
+## become
+## unbecome
 ～
