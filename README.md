@@ -54,5 +54,6 @@ https://cloud.tencent.com/developer/article/1438044
 ## unbecome
 
 ## 容错
-## 调度
-## 路由
+## 调度。-> 线程池
+## 邮箱 --> 队列
+## 路由。--> 分发
