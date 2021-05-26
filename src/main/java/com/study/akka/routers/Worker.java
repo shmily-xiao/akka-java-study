@@ -2,10 +2,13 @@ package com.study.akka.routers;
 
 import akka.actor.*;
 import akka.routing.*;
+import scala.collection.immutable.IndexedSeq;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import static akka.japi.Util.immutableIndexedSeq;
 
 /**
  * 路由也可以被创建为一个独立的 Actor，管理路由器本身，并从配置中加载路由逻辑和其他设置。
@@ -83,7 +86,86 @@ class Master extends AbstractActor {
 
 //        ActorRef routerRemote = getContext().actorOf(new RemoteRouterConfig(new RoundRobinPool(5), addresses).props(Props.create(Echo.class)));
     }
+}
+
+class RedundancyRoutingLogic implements RoutingLogic{
+    private final int nbrCopies;
+
+    public RedundancyRoutingLogic(int nbrCopies) {
+        this.nbrCopies = nbrCopies;
+    }
+    // 循环路由
+    RoundRobinRoutingLogic routingLogic = new RoundRobinRoutingLogic();
+
+    @Override
+    public Routee select(Object message, IndexedSeq<Routee> routees) {
+        List<Routee> targets  = new ArrayList<>();
+        for (int i=0; i < nbrCopies; i++){
+            targets.add(routingLogic.select(message, routees));
+        }
+        return new SeveralRoutees(targets);
+    }
+}
+
+class TestRoutee implements Routee{
+    public final int n;
+
+    public TestRoutee(int n){
+        this.n = n;
+    }
+
+    @Override
+    public void send(Object message, ActorRef sender) {
+        System.out.println(n);
+    }
+
+    @Override
+    public int hashCode() {
+        return n;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof TestRoutee) && n == ((TestRoutee) obj).n;
+    }
+}
+class Main{
+    public static void main(String[] args) {
+        RedundancyRoutingLogic logic = new RedundancyRoutingLogic(3);
+
+        List<Routee> routeeList = new ArrayList<>();
+        for (int n=1; n <= 7; n++){
+            routeeList.add(new TestRoutee(n));
+        }
+        IndexedSeq<Routee> routees = immutableIndexedSeq(routeeList);
+        SeveralRoutees r1 = (SeveralRoutees)logic.select("msg", routees);
+        System.out.println(r1.getRoutees().get(0));
+        System.out.println(r1.getRoutees().get(1));
+        System.out.println(r1.getRoutees().get(2));
+        System.out.println(routeeList.get(0));
+        System.out.println(routeeList.get(1));
+        System.out.println(routeeList.get(2));
+        System.out.println(" ----------  ");
 
 
+        SeveralRoutees r2 = (SeveralRoutees)logic.select("msg", routees);
+        System.out.println(r2.getRoutees().get(0));
+        System.out.println(r2.getRoutees().get(1));
+        System.out.println(r2.getRoutees().get(2));
+        System.out.println(routeeList.get(3));
+        System.out.println(routeeList.get(4));
+        System.out.println(routeeList.get(5));
+        System.out.println(" ----------  ");
 
+
+        SeveralRoutees r3 = (SeveralRoutees)logic.select("msg", routees);
+        System.out.println(r3.getRoutees().get(0));
+        System.out.println(r3.getRoutees().get(1));
+        System.out.println(r3.getRoutees().get(2));
+        System.out.println(routeeList.get(6));
+        System.out.println(routeeList.get(0));
+        System.out.println(routeeList.get(1));
+        System.out.println(" ----------  ");
+
+    }
 }
