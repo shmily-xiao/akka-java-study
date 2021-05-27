@@ -15,7 +15,8 @@ public class FsmTest {
      * 启动它需要SetTarget，为要传递的Batches设置目标；Queue将添加到内部队列，
      * 而Flush将标记突发（burst）的结束。
      */
-    static final class SetTarget{
+    public static final class SetTarget{
+        // 使用外部传人的 actor 引用来进行操作
         private final ActorRef ref;
 
         public SetTarget(ActorRef ref) {
@@ -32,7 +33,10 @@ public class FsmTest {
         }
     }
 
-    static final class Queue {
+    /**
+     * 队列
+     */
+    public static final class Queue {
         private final Object obj;
 
         public Queue(Object obj){
@@ -52,7 +56,10 @@ public class FsmTest {
     }
 
 
-    static final class Batch{
+    /**
+     * 批量
+     */
+    public static final class Batch{
         private final List<Object> list;
 
         public Batch(List<Object> list) {
@@ -90,7 +97,7 @@ public class FsmTest {
             return builder.toString();
         }
     }
-    static enum Flush{
+    public static enum Flush{
         FLUSH
     }
 
@@ -108,7 +115,10 @@ public class FsmTest {
         UNINITIALIZED
     }
 
-    static final class Todo implements Data {
+    /**
+     * todo
+     */
+    public static final class Todo implements Data {
         private final ActorRef target;
         private final List<Object> queue;
 
