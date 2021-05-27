@@ -141,4 +141,4 @@ State(S) x Event(E) -> Actions (A), State(S’)
 如果我们处于状态S，并且事件E发生，那么我们应该执行操作A，并向状态S’过渡。
 
 
-
+~
