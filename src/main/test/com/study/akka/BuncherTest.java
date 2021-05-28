@@ -19,11 +19,11 @@ import static com.study.akka.fsm.FsmTest.Flush.FLUSH;
  * @date 2021/05/27
  */
 public class BuncherTest {
-
     static ActorSystem system;
 
     @BeforeClass
     public static void setup(){
+        // 创建了一个主actor
         system = ActorSystem.create();
     }
 
