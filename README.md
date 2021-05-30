@@ -140,4 +140,4 @@ Kill消息是另一种具有特殊处理功能的消息类型。有关 Actor 如
 State(S) x Event(E) -> Actions (A), State(S’)
 如果我们处于状态S，并且事件E发生，那么我们应该执行操作A，并向状态S’过渡。
 
-
+~
