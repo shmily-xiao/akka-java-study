@@ -26,7 +26,7 @@ public class Transformer implements ClassFileTransformer {
                 className.startsWith("com/intellij") ||
                 className.startsWith("org/jetbrains") ||
                 className.startsWith("com/study/agent") ||
-                className.startsWith("com/thoreauz/agent") ||
+                className.startsWith("com/thoreauz/agent")
         ){
             // 不对JDK类以及agent类增强
             return null;

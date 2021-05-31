@@ -33,7 +33,7 @@ public class BuncherTest {
         system=null;
     }
 
-    @Test
+//    @Test
     public void  testBuncherActorBatchesCorrectly(){
         new TestKit(system){
             {
@@ -65,7 +65,7 @@ public class BuncherTest {
     }
 
 
-    @Test
+//    @Test
     public void testBuncherActorDoesntBatchUninitialized(){
         new TestKit(system){
             {
