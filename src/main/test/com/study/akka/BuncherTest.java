@@ -41,6 +41,7 @@ public class BuncherTest {
                 final ActorRef probe = getRef();
 
                 buncher.tell(new FsmTest.SetTarget(probe), probe);
+
                 buncher.tell(new FsmTest.Queue(42), probe);
                 buncher.tell(new FsmTest.Queue(43), probe);
                 LinkedList<Object> list1  = new LinkedList<>();
