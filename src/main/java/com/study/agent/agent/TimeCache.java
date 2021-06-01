@@ -1,4 +1,4 @@
-package com.study.agent;
+package com.study.agent.agent;
 
 import java.util.HashMap;
 import java.util.Map;

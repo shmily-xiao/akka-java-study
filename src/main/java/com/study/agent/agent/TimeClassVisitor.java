@@ -1,4 +1,4 @@
-package com.study.agent;
+package com.study.agent.agent;
 
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -25,12 +25,12 @@ public class TimeClassVisitor extends ClassVisitor {
         mv = new AdviceAdapter(Opcodes.ASM5, mv, access, name, descriptor) {
             @Override
             protected void onMethodEnter() {
-                System.out.println("onMethodEnter");
+//                System.out.println("onMethodEnter");
                 // 方法进入时获取开始时间
                 mv.visitLdcInsn(key);
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "currentTimeMillis", "()J", false);
                 mv.visitMethodInsn(INVOKESTATIC,
-                        " com/study/agent/TimeCache",
+                        "com/study/agent/agent/TimeCache",
                         "setStartTimeMap",
                         "(Ljava/lang/String;J)V",
                         false
@@ -40,19 +40,19 @@ public class TimeClassVisitor extends ClassVisitor {
             //方法退出时获取结束时间并计算执行时间
             @Override
             protected void onMethodExit(int i) {
-                System.out.println("onMethodExit");
+//                System.out.println("onMethodExit");
                 // 出方法时的动作
                 mv.visitLdcInsn(key);
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "currentTimeMillis", "()J", false);
                 mv.visitMethodInsn(INVOKESTATIC,
-                        "com/study/agent/TimeCache",
+                        "com/study/agent/agent/TimeCache",
                         "setEndTimeMap",
                         "(Ljava/lang/String;J)V",
                         false);
                 mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
                 mv.visitLdcInsn(key);
                 mv.visitMethodInsn(INVOKESTATIC,
-                        "com/study/agent/TimeCache",
+                        "com/study/agent/agent/TimeCache",
                         "getCostTime",
                         "(Ljava/lang/String;)Ljava/lang/String;"
                         ,false

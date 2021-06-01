@@ -1,5 +1,6 @@
-package com.study.agent;
+package com.study.agent.agent;
 
+import com.study.agent.agent.TimeClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 
@@ -25,7 +26,7 @@ public class Transformer implements ClassFileTransformer {
                 className.startsWith("com/sun") ||
                 className.startsWith("com/intellij") ||
                 className.startsWith("org/jetbrains") ||
-                className.startsWith("com/study/agent") ||
+                className.startsWith("com/study/agent/agent") ||
                 className.startsWith("com/thoreauz/agent")
         ){
             // 不对JDK类以及agent类增强
