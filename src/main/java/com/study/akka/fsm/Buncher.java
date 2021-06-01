@@ -11,6 +11,8 @@ import java.util.LinkedList;
  * State(S) x Event(E) -> Actions (A), State(S’)
  * 如果我们处于状态S，并且事件E发生，那么我们应该执行操作A，并向状态S’过渡。
  *
+ * 可以使用goto(S)或stay()实现相同的状态转换（当前处于状态S时）。
+ * 不同之处在于，goto(S)会发出一个事件S->S，该事件可以由onTransition处理，而stay()则不会
  * @author wzj
  * @date 2021/05/26
  */
@@ -34,7 +36,10 @@ public class Buncher extends AbstractFSM<FsmTest.State, FsmTest.Data> {
                 )
         );
 
+        // 唯一缺少的部分是Batches实际发送到目标的位置，为此我们使用了onTransition机制：
         // 你可以声明多个这样的块，如果发生状态转换（即只有当状态实际更改时），所有这些块都将尝试匹配行为
+        //
+        // 过渡期
         onTransition(
                 //  (fromState, toState, apply)
                 matchState(
@@ -44,21 +49,28 @@ public class Buncher extends AbstractFSM<FsmTest.State, FsmTest.Data> {
                             // reuse this matcher
                             final UnitMatch<FsmTest.Data> m =
                                     UnitMatch.create(
-                                            // 这里处理的第一个案例是将Queue() 请求添加到内部队列并进入Active状态
-                                            // ，但前提是在接收到Queue()事件时，FSM 数据需要事先就初始化好了
                                             matchData(
                                                     FsmTest.Todo.class,
+                                                    // 从队列中取对象（也叫做消息）出来，发送出去
                                                     todo -> todo.getTarget().tell(new FsmTest.Batch(todo.getQueue()), getSelf())
                                             ));
+                            m.match(stateData());
+                            System.out.println(stateData());
+                            System.out.println(nextStateData());
+                            System.out.println("fsm matchState out: from active to idle");
                         }
                 )
-                 // (fromState, toState, apply)
+                // 在状态更改期间，旧的状态数据通过stateData()可用，
+                // 如展示的这样，新的状态数据将作为nextStateData()可用
+                // (fromState, toState, apply)
                 .state(
                         FsmTest.State.Idle,
                         FsmTest.State.Active,
                         () -> {
+                            System.out.println(stateData());
+                            System.out.println(nextStateData());
                             // Do something here
-                            System.out.println("fsm out： from idle to active");
+                            System.out.println("fsm state out： from idle to active");
                         }
                 )
         );
@@ -76,6 +88,8 @@ public class Buncher extends AbstractFSM<FsmTest.State, FsmTest.Data> {
         // 因此我们利用以下事实：未由when()块处理的任何事件都传递给whenUnhandled()块
         whenUnhandled(
                 // eventType, dataType, do
+                // 这里处理的第一个案例是将Queue() 请求添加到内部队列并进入Active状态
+                // ，但前提是在接收到Queue()事件时，FSM 数据需要事先就初始化好了
                 matchEvent(
                         FsmTest.Queue.class,
                         FsmTest.Todo.class,
@@ -83,7 +97,10 @@ public class Buncher extends AbstractFSM<FsmTest.State, FsmTest.Data> {
                 )
                 .anyEvent(
                         (event, state) -> {
-                            log().warning("received unhandled request {} in state {}/{}", event, stateName(), state);
+                            log().warning("received unhandled request {} in state {}/{}",
+                                    event,
+                                    stateName(),
+                                    state);
                             return stay();
                         }
                 )

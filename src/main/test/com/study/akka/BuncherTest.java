@@ -33,7 +33,7 @@ public class BuncherTest {
         system=null;
     }
 
-//    @Test
+    @Test
     public void  testBuncherActorBatchesCorrectly(){
         new TestKit(system){
             {
@@ -47,13 +47,16 @@ public class BuncherTest {
                 list1.add(42);
                 list1.add(43);
                 expectMsgEquals(new FsmTest.Batch(list1));
+                System.out.println(" -------------------- ");
 
                 buncher.tell(new FsmTest.Queue(44), probe);
                 buncher.tell(FLUSH, probe);
-                buncher.tell(new FsmTest.Queue(45), probe);
+                buncher.tell(new FsmTest.Queue(45), probe); // flush之后没有出现这条记录
                 LinkedList<Object> list2  = new LinkedList<>();
                 list2.add(44);
                 expectMsgEquals(new FsmTest.Batch(list2));
+
+                System.out.println(" -------------------- ");
 
                 LinkedList<Object> list3 = new LinkedList<>();
                 list3.add(45);
@@ -65,7 +68,7 @@ public class BuncherTest {
     }
 
 
-//    @Test
+    @Test
     public void testBuncherActorDoesntBatchUninitialized(){
         new TestKit(system){
             {

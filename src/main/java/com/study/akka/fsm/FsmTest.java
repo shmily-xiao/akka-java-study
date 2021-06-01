@@ -103,8 +103,8 @@ public class FsmTest {
 
     // states
     enum State{
-        Idle,
-        Active
+        Idle, // 闲置的
+        Active // 激活的
     }
 
     // state data
@@ -112,7 +112,7 @@ public class FsmTest {
 
 
     enum Uninitialized implements Data {
-        UNINITIALIZED
+        UNINITIALIZED  // 没有被初始化
     }
 
     /**
@@ -147,6 +147,14 @@ public class FsmTest {
 
         public Todo copy(ActorRef target){
             return new Todo(target, this.queue);
+        }
+
+        @Override
+        public String toString() {
+            return "Todo{" +
+                    "target=" + target +
+                    ", queue=" + queue +
+                    '}';
         }
     }
 }
