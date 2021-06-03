@@ -142,3 +142,5 @@ State(S) x Event(E) -> Actions (A), State(S’)
 
 
 # 持久化
+
+~
