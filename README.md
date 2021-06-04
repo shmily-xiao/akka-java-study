@@ -144,3 +144,4 @@ State(S) x Event(E) -> Actions (A), State(S’)
 # 持久化
 
 ~
+暂时到这
