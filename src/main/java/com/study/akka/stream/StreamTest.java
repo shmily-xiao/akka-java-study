@@ -2,12 +2,15 @@ package com.study.akka.stream;
 
 
 import akka.actor.typed.ActorRef;
+import akka.japi.function.Function;
 import akka.japi.JavaPartialFunction;
 import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.RunnableGraph;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import akka.stream.typed.javadsl.ActorSource;
+
+import java.util.Optional;
 
 public class StreamTest{
 
@@ -32,17 +35,25 @@ public class StreamTest{
     }
 
     public static void main(String[] args) {
-        final JavaPartialFunction<Protocol, Throwable> failureMatcher =
-                new JavaPartialFunction<Protocol, Throwable>() {
-                    @Override
-                    public Throwable apply(Protocol x, boolean isCheck) throws Exception {
-                        if (x instanceof  Fail){
-                            return ( (Fail) x).ex;
-                        }else {
-                            throw noMatch();
-                        }
-                    }
-                };
+        final Function<Protocol, Optional<Throwable>> failureMatcher = new Function<Protocol, Optional<Throwable>>() {
+            @Override
+            public Optional<Throwable> apply(Protocol param) throws Exception {
+                if (param instanceof  Fail) {
+                    return Optional.of(((Fail) param).ex);
+                }
+                return Optional.empty();
+            }
+        };
+//                new JavaPartialFunction<Protocol, Throwable>() {
+//                    @Override
+//                    public Throwable apply(Protocol x, boolean isCheck) throws Exception {
+//                        if (x instanceof  Fail){
+//                            return ( (Fail) x).ex;
+//                        }else {
+//                            throw noMatch();
+//                        }
+//                    }
+//                };
         final Source<Protocol, ActorRef<Protocol>> source
                 // 有反压
                 = ActorSource.actorRef( (m) -> m instanceof Complete, failureMatcher, 8, OverflowStrategy.fail());
