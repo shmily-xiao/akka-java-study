@@ -1,5 +1,7 @@
 <!-- #build-sample -->
-<project>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>akka-java-study</groupId>
@@ -104,8 +106,20 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-http-bom_${scala.binary.version}</artifactId>
             <version>10.2.6</version>
-<!--            <type>pom</type>-->
+            <type>pom</type>
         </dependency>
+
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-http-core_2.13</artifactId>
+            <version>10.2.6</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-http_2.13</artifactId>
+            <version>10.2.6</version>
+        </dependency>
+
 <!--        <dependency>-->
 <!--            <groupId>com.typesafe.akka</groupId>-->
 <!--            <artifactId>akka-http_${scala.binary.version}</artifactId>-->
@@ -132,44 +146,44 @@
                     </compilerArguments>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
-                <configuration>
-                    <executable>java</executable>
-                    <arguments>
-                        <argument>-classpath</argument>
-                        <classpath />
-                        <argument>com.example.AkkaQuickstart</argument>
-                    </arguments>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <phase>package</phase>
-                        <configuration>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
-                            <archive>
-                                <manifestEntries>
-                                    <Premain-Class>com.study.agent.agent.MyAgent</Premain-Class>
-                                    <Can-Redefine-Classes>true</Can-Redefine-Classes>
-                                    <Can-Retransform-Classes>true</Can-Retransform-Classes>
-                                </manifestEntries>
-                            </archive>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.codehaus.mojo</groupId>-->
+<!--                <artifactId>exec-maven-plugin</artifactId>-->
+<!--                <version>1.6.0</version>-->
+<!--                <configuration>-->
+<!--                    <executable>java</executable>-->
+<!--                    <arguments>-->
+<!--                        <argument>-classpath</argument>-->
+<!--                        <classpath />-->
+<!--                        <argument>com.example.AkkaQuickstart</argument>-->
+<!--                    </arguments>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-assembly-plugin</artifactId>-->
+<!--                <version>3.3.0</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <goals>-->
+<!--                            <goal>single</goal>-->
+<!--                        </goals>-->
+<!--                        <phase>package</phase>-->
+<!--                        <configuration>-->
+<!--                            <descriptorRefs>-->
+<!--                                <descriptorRef>jar-with-dependencies</descriptorRef>-->
+<!--                            </descriptorRefs>-->
+<!--                            <archive>-->
+<!--                                <manifestEntries>-->
+<!--                                    <Premain-Class>com.study.agent.agent.MyAgent</Premain-Class>-->
+<!--                                    <Can-Redefine-Classes>true</Can-Redefine-Classes>-->
+<!--                                    <Can-Retransform-Classes>true</Can-Retransform-Classes>-->
+<!--                                </manifestEntries>-->
+<!--                            </archive>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 </project>
