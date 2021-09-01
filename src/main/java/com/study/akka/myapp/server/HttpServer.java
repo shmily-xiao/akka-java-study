@@ -28,6 +28,10 @@ import scala.concurrent.ExecutionContextExecutor;
 import java.io.File;
 import java.util.concurrent.CompletionStage;
 
+/**
+ * 动态的的地址： https://doc.akka.io/docs/akka-http/10.2.6/routing-dsl/play-comparison.html
+ *
+ */
 public class HttpServer extends AllDirectives {
 
     public static void main(String[] args) throws Exception {
