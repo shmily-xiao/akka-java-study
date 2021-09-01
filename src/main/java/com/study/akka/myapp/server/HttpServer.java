@@ -1,5 +1,6 @@
 package com.study.akka.myapp.server;
 
+import akka.NotUsed;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.http.javadsl.ConnectHttp;
@@ -21,6 +22,7 @@ import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import scala.concurrent.ExecutionContextExecutor;
 
 import java.io.File;
@@ -51,18 +53,38 @@ public class HttpServer extends AllDirectives {
         Materializer materializer = ActorMaterializer.create(system);
 
         Source<IncomingConnection, CompletionStage<ServerBinding>> serverSource =
-                Http.get(system).bind(ConnectHttp.toHost("localhost", 80));
+                Http.get(system).bind(ConnectHttp.toHost("localhost", 8080));
+
+        Flow<HttpRequest, HttpRequest, NotUsed> failureDetection =
+                Flow.of(HttpRequest.class)
+                        .watchTermination((notUsed, termination) -> {
+                            termination.whenComplete((done, cause) -> {
+                                if (cause != null) {
+                                    // signal the failure to external monitoring service!
+                                    System.out.println("nothing");
+                                }
+                                System.out.println("what can i do?");
+                            });
+                            return NotUsed.getInstance();
+                        });
+
+        Flow<HttpRequest, HttpResponse, NotUsed> httpEcho =
+                Flow.of(HttpRequest.class)
+                        .via(failureDetection)
+                        .map(request -> {
+                            Source<ByteString, Object> bytes = request.entity().getDataBytes();
+                            HttpEntity.Chunked entity = HttpEntities.create(ContentTypes.TEXT_PLAIN_UTF8, bytes);
+
+                            return HttpResponse.create()
+                                    .withEntity(entity);
+                        });
 
         CompletionStage<ServerBinding> serverBindingFuture =
-                serverSource.to(Sink.foreach(connection -> {
-                            System.out.println("Accepted new connection from " + connection.remoteAddress());
-                            // ... and then actually handle the connection
+                serverSource.to(Sink.foreach(conn -> {
+                            System.out.println("Accepted new connection from " + conn.remoteAddress());
+                            conn.handleWith(httpEcho, materializer);
                         }
                 )).run(materializer);
-
-        serverBindingFuture.whenCompleteAsync((binding, failure) -> {
-            // possibly report the failure somewhere...
-        }, system.dispatcher());
     }
 
     private Route createRoute() {
