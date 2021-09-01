@@ -1,4 +1,4 @@
-package com.study.akka.myapp;
+package com.study.akka.myapp.server;
 
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.javadsl.Behaviors;

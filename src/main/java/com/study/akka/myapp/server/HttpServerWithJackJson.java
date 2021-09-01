@@ -1,8 +1,7 @@
-package com.study.akka.myapp;
+package com.study.akka.myapp.server;
 
 import akka.Done;
 import akka.actor.typed.ActorSystem;
-import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;

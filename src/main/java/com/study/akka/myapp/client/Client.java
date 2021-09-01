@@ -1,4 +1,4 @@
-package com.study.akka.myapp;
+package com.study.akka.myapp.client;
 
 import akka.actor.*;
 

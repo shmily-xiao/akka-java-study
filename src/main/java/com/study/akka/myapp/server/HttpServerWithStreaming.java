@@ -1,18 +1,14 @@
-package com.study.akka.myapp;
+package com.study.akka.myapp.server;
 
 import akka.NotUsed;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.javadsl.Behaviors;
-import akka.http.javadsl.HandlerProvider;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntities;
-import akka.http.javadsl.model.HttpRequest;
-import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
-import akka.japi.function.Function;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 

@@ -1,4 +1,4 @@
-package com.study.akka.myapp;
+package com.study.akka.myapp.server;
 
 import akka.actor.AbstractLoggingActor;
 import akka.actor.ActorRef;

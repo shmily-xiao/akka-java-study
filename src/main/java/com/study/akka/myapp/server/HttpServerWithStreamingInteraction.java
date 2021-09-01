@@ -1,4 +1,4 @@
-package com.study.akka.myapp;
+package com.study.akka.myapp.server;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
@@ -10,13 +10,11 @@ import akka.actor.typed.javadsl.Receive;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.ServerBinding;
 import akka.http.javadsl.marshallers.jackson.Jackson;
-import akka.http.javadsl.model.StatusCode;
 import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
 import akka.http.javadsl.unmarshalling.StringUnmarshallers;
 
-import javax.swing.*;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
