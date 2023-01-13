@@ -1,9 +1,8 @@
 package com.study.akka.myapp.server;
 
-import akka.actor.AbstractLoggingActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
+import akka.actor.*;
+
+import java.util.Optional;
 
 public class Server extends AbstractLoggingActor {
     static Props props() {
@@ -15,8 +14,12 @@ public class Server extends AbstractLoggingActor {
         super.log().info("createReceive method in");
         return receiveBuilder()
                 .matchEquals("printit", p -> {
-                    ActorRef secondRef = getContext().actorOf(Props.empty(), "second-actor");
+                    ActorRef secondRef;
+                    Optional<ActorRef> child = getContext().findChild("server-response-actor");
+                    secondRef = child.orElseGet(() -> getContext().actorOf(Props.empty(), "server-response-actor"));
                     System.out.println("Second: " + secondRef);
+                    System.out.println("server receive: " + p);
+                    getSender().tell("i print it success", secondRef);
                 })
                 .build();
     }
