@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>akka-java-study</groupId>
-    <artifactId>app</artifactId>
+    <artifactId>akka-app-study-test</artifactId>
     <version>1.0</version>
 
     <properties>
@@ -132,9 +132,21 @@
             <version>10.2.6</version>
         </dependency>
 
+<!--        <dependency>-->
+<!--            <groupId>com.typesafe.akka</groupId>-->
+<!--            <artifactId>akka-http_${scala.binary.version}</artifactId>-->
+<!--        </dependency>-->
+
+        <!--pb-->
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-http_${scala.binary.version}</artifactId>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.21.10</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+            <version>3.21.10</version>
         </dependency>
 
     </dependencies>

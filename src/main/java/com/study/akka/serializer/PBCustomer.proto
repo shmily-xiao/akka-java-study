@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.study.akka.serializer;
+
+// Reduce到Brain的协议
+//  https://blog.csdn.net/yangfanchao/article/details/7764398
+message Customer {
+  string name = 1;
+  int32 age = 2;
+  string tel = 3;
+}
